@@ -1,14 +1,12 @@
 import pyedflib
 import numpy as np
-f = pyedflib.EdfReader("SC4001E0-PSG.edf")
+f = pyedflib.EdfReader("EDF_DB/SC4002E0-PSG.edf")
 n = f.signals_in_file
 signal_labels = f.getSignalLabels()
-sigbufs = np.zeros((n, f.getNSamples()[0]))
-for i in np.arange(n):
-    sigbufs[i, :] = f.readSignal(i)
+sigbufs = f.readSignal(0)
 #%%
 
-f2 = pyedflib.EdfReader("SC4001EC-Hypnogram.edf")
+f2 = pyedflib.EdfReader("EDF_DB/SC4002EC-Hypnogram.edf")
 n2 = f2.signals_in_file
 a=f2.readAnnotations()
 #
@@ -34,7 +32,7 @@ T=0.01
 WindowTime=30
 WindowSamples=30/T
 
-SCNSignal=sigbufs[0,:]
+SCNSignal=sigbufs
 
 Windows=createWindowsBySamples(SCNSignal,WindowSamples)
 
@@ -90,7 +88,7 @@ import matplotlib.patches as mpatches
 import sklearn as skl 
 from sklearn import model_selection
 
-Train, Test=model_selection.train_test_split(DataBase, test_size=0.3,
+Train, Test=model_selection.train_test_split(DataBase, test_size=0.5,
                                                  stratify=DataBase[:,3000],
                                                  random_state=21)
 
