@@ -13,42 +13,31 @@ import glob
 import pyedflib
 import numpy as np
 
-signalNames=glob.glob("/home/asceta/Documents/Fatigue/DB/*PSG.edf")
-signalHyp=glob.glob("/home/asceta/Documents/Fatigue/DB/*Hypnogram.edf")
+signalNames=sorted(glob.glob("/home/asceta/Documents/Fatigue/DB/*PSG.edf"))
+signalHyp=sorted(glob.glob("/home/asceta/Documents/Fatigue/DB/*Hypnogram.edf"))
 #np.concatenate((data[0],data[1]))
 #len(signalHyp)
 
+def getLists(signalNames, signalHyp):
+    signalList=[]
+    annotationsList=[]
+    for i in range(0, len(signalNames)):
+        file = pyedflib.EdfReader(signalNames[i])
+        #read Fpz-Cz EEG wich is the first
+        signalList.append(file.readSignal(0))
+        file._close()
+        del file
+        
+        file2 = pyedflib.EdfReader(signalHyp[i])
+        annotationsList.append(file2.readAnnotations())
+        file2._close()
+        del file2
+    return signalList, annotationsList
 
-signalList=[]
-annotationsList=[]
-for i in range(0, len(signalNames)):
-    file = pyedflib.EdfReader(signalNames[i])
-    #read Fpz-Cz EEG wich is the first
-    signalList.append(file.readSignal(0))
-    file._close()
-    del file
+signalList, annotationsList = getLists(signalNames, signalHyp)
     
 #%%
-import pyedflib
-import numpy as np
 
-f = pyedflib.EdfReader("/home/asceta/Documents/Fatigue/DB/SC4011E0-PSG.edf")
-n = f.signals_in_file
-signal_labels = f.getSignalLabels()
-sigbufs = f.readSignal(0)
-#%%
-
-f2 = pyedflib.EdfReader("/home/asceta/Documents/Fatigue/DB/SC4011EH-Hypnogram.edf")
-n2 = f2.signals_in_file
-a=f2.readAnnotations()
-#
-#%%
-f2._close()
-del f2
-
-f._close()
-del f
-#%%
 #input single channel signal
 def createWindowsBySamples(SingleChannelSignal, WSizeSamples):
     
@@ -60,21 +49,32 @@ def createWindowsBySamples(SingleChannelSignal, WSizeSamples):
     
     return ArrayOfWindows
 
-#100Hz
-T=0.01
-WindowTime=30
-WindowSamples=30/T
 
-SCNSignal=sigbufs
+def getWindowsList(signalList):
+    #100Hz
+    T=0.01
+    WindowTime=30
+    WindowSamples=WindowTime/T
+     
+    windowsList=[]
+    for i in range(0, len(signalList)):
+        window = createWindowsBySamples(signalList[i],WindowSamples)
+        windowsList.append(window)
+    
+    return windowsList
 
-Windows=createWindowsBySamples(SCNSignal,WindowSamples)
+windowsList = getWindowsList(signalList)
 
+#%%
 #154 lenght 
 #1 duracion
 #2 duracion intervalo
-SignalAnnotations=a
-SingleChannelSignal=SCNSignal
-WSizeSamples=WindowSamples
+#SignalAnnotations=annotationsList[0]
+#SingleChannelSignal=signalList[0]
+#T=0.01
+#WindowTime=30
+#WindowSamples=WindowTime/T
+#WSizeSamples=WindowSamples
 
 def labelSignal(SingleChannelSignal, SignalAnnotations, T, WSizeSamples):
     
@@ -99,19 +99,56 @@ def labelSignal(SingleChannelSignal, SignalAnnotations, T, WSizeSamples):
 def binaryLabel(LabelArray):
     
     BinaryArray = np.zeros((LabelArray.size))
+    #print(LabelArray.size)
     for i in np.arange(LabelArray.size):
+        #print(i)
+        if LabelArray[i]=="":
+            LabelArray[i]=LabelArray[i-1]
         if LabelArray[i][-1]=='W':
             BinaryArray[i]=1
     return BinaryArray
 
             
             
-LabelArray=labelSignal(SCNSignal, a, T, WindowSamples)
-BinaryLabels=binaryLabel(LabelArray)
-DataBase=np.concatenate((Windows, BinaryLabels.reshape((1, BinaryLabels.size)).T), axis=1)
+#LabelArray=labelSignal(SingleChannelSignal, SignalAnnotations, T, WindowSamples)
+#BinaryLabels=binaryLabel(LabelArray)
+def getBinaryLabelsList(signalList, annotationsList):
+    biLabList=[]
+    T=0.01
+    WindowTime=30
+    WindowSamples=WindowTime/T
+    for i in range(0, len(annotationsList)):
+        LabelArray=labelSignal(signalList[i], annotationsList[i], T, WindowSamples)
+        BinaryLabels=binaryLabel(LabelArray)
+        biLabList.append(BinaryLabels)
+    
+    return biLabList
 
+biLabList=getBinaryLabelsList(signalList, annotationsList)
+    
+#BinaryLabels=binaryLabel(biLabList[3]) #This one had last 2 labels ""
+#%%
+#Generate DB as concatenation of things, for random split (if wanted)
+#but not recommended due time correlations
+def concatSigLab(windowsList, biLabList):
+    DBlist=[]
+    for i in range(0, len(biLabList)):
+        DBelement=np.concatenate((windowsList[i], biLabList[i].reshape((1, biLabList[i].size)).T), axis=1)
+        DBlist.append(DBelement)
+    return DBlist   
+        
+def concatList(biLabList):
+    DB = biLabList[0]
+    for i in range(0, len(biLabList)-1):
+        DB=np.concatenate((DB, biLabList[i+1]), axis=0)
+    return DB
 
+def getConcatDB(windowsList, biLabList):
+    DBlist=concatSigLab(windowsList, biLabList)
+    DB=concatList(DBlist)
+    return DB
 
+DataBase = getConcatDB(windowsList, biLabList)
 
 #%%
 import csv
@@ -256,8 +293,3 @@ print( conf );
 #ann_dir = 'SC4001EC-Hypnogram.edf'
 #
 #main_load_edf(psg_dir, ann_dir, "file")
-#%%
-
-import glob
-
-x=glob.glob("EDF_DB/*PSG.edf")

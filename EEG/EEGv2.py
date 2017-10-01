@@ -43,6 +43,7 @@ Windows=createWindowsBySamples(SCNSignal,WindowSamples)
 SignalAnnotations=a
 SingleChannelSignal=SCNSignal
 WSizeSamples=WindowSamples
+#%%
 
 def labelSignal(SingleChannelSignal, SignalAnnotations, T, WSizeSamples):
     
