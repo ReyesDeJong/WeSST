@@ -3,7 +3,7 @@
 """
 Created on Sun Oct  1 15:36:48 2017
 
-trained over 12 subjects and shuffle and reorder for test
+trained over 12 subjects and 1 for test
 
 @author: asceta
 """
@@ -13,11 +13,34 @@ import glob
 import pyedflib
 import numpy as np
 
+
+
 signalNames=sorted(glob.glob("/home/asceta/Documents/Fatigue/DB/*PSG.edf"))
 signalHyp=sorted(glob.glob("/home/asceta/Documents/Fatigue/DB/*Hypnogram.edf"))
+
+testSubjects=1
+testSubjectIndexs=np.random.randint(len(signalNames),size=testSubjects)
+
+#first 12
+signalNamesTrain=signalNames[:len(signalNames)-1]
+signalNamesTest=[]
+signalNamesTest.append(signalNames[-1])
+
+signalHypTrain=signalHyp[:len(signalHyp)-1]
+signalHypTest=[]
+signalHypTest.append(signalHyp[-1])
+
+
+##for random subject 
+#signalNamesTest=signalNames.pop(testSubjectIndexs)
+#signalNamesTrain=signalNames
+
+#signalHypTest=signalHyp.pop(testSubjectIndexs)
+#signalHypTrain=signalHyp
+
 #np.concatenate((data[0],data[1]))
 #len(signalHyp)
-
+#%%
 def getLists(signalNames, signalHyp):
     signalList=[]
     annotationsList=[]
@@ -34,7 +57,8 @@ def getLists(signalNames, signalHyp):
         del file2
     return signalList, annotationsList
 
-signalList, annotationsList = getLists(signalNames, signalHyp)
+signalListTrain, annotationsListTrain = getLists(signalNamesTrain, signalHypTrain)
+signalListTest, annotationsListTest = getLists(signalNamesTest, signalHypTest)
     
 #%%
 
@@ -63,7 +87,8 @@ def getWindowsList(signalList):
     
     return windowsList
 
-windowsList = getWindowsList(signalList)
+windowsListTrain = getWindowsList(signalListTrain)
+windowsListTest = getWindowsList(signalListTest)
 
 #%%
 #154 lenght 
@@ -124,7 +149,8 @@ def getBinaryLabelsList(signalList, annotationsList):
     
     return biLabList
 
-biLabList=getBinaryLabelsList(signalList, annotationsList)
+biLabListTrain=getBinaryLabelsList(signalListTrain, annotationsListTrain)
+biLabListTest=getBinaryLabelsList(signalListTest, annotationsListTest)
     
 #BinaryLabels=binaryLabel(biLabList[3]) #This one had last 2 labels ""
 #%%
@@ -148,26 +174,26 @@ def getConcatDB(windowsList, biLabList):
     DB=concatList(DBlist)
     return DB
 
-DataBase = getConcatDB(windowsList, biLabList)
-
+DataBaseTrain = getConcatDB(windowsListTrain, biLabListTrain)
+DataBaseTest = getConcatDB(windowsListTest, biLabListTest)
 #%%
-import csv
+#import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import sklearn as skl 
 from sklearn import model_selection
 
-Train, Test=model_selection.train_test_split(DataBase, test_size=0.5,
-                                                 stratify=DataBase[:,3000],
-                                                 random_state=21)
+#Train, Test=model_selection.train_test_split(DataBase, test_size=0.5,
+#                                                 stratify=DataBase[:,3000],
+#                                                 random_state=21)
 
         
-sign_train = Train[:,0:3000];
-class_train = Train[:,3000];
+sign_train = DataBaseTrain[:,0:3000];
+class_train = DataBaseTrain[:,3000];
 
-sign_test = Test[:,0:3000];
-class_test = Test[:,3000];
+sign_test = DataBaseTest[:,0:3000];
+class_test = DataBaseTest[:,3000];
 #%%
 
 import numpy as np
