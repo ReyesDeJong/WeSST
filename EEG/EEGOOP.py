@@ -16,9 +16,16 @@ from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
 
 class DB:
-    'Common base class for all perceptrons'
     '''
-
+    Contructor for a DB object, that contains the clf to use, the sample frecuency, 
+    size of windows in seconds, signal names, signal hypnograms names, signal sample period
+    and number of samples per window
+    
+    @param clf classifier to use
+    @param f sample freucency
+    @param Wtime windows size in seconds
+    @param signalNames path of signal PSGs files
+    @param signalHyp path of signal hypnograms
     '''
     def __init__(self, clf, f, Wtime, signalNames, signalHyp):
         
@@ -31,10 +38,15 @@ class DB:
         self.windowSamples=self.windowTime/self.sampleT
       
     """
-
-    """
-   
-    def getLists(self):#, signalNames, signalHyp):
+    Method that return a list containin the numeric values of the EEG signals
+    from every file in signalNames, and a list with the annotation to the respective
+    EEG signals, every annotation has a list of the labeled stages, the duration
+    and interval of those stages
+    
+    @return singalList list of EEGs
+    @return annotationList list of annotation for each EEG
+    """ 
+    def getLists(self):
         
         signalList=[]
         annotationsList=[]
@@ -54,7 +66,20 @@ class DB:
             
         return signalList, annotationsList
     
+          
+    """
+    Method that return a list containin the numeric values of the EEG signals
+    from every file in signalNames, and a list with the annotation to the respective
+    EEG signals, every annotation has a list of the labeled stages, the duration
+    and interval of those stages. Same as previous, but can be performed on any
+    input file paths
     
+    @param signalNames signal PSGs paths
+    @param singalHyp signal Hypnogram paths
+    
+    @return singalList list of EEGs
+    @return annotationList list of annotation for each EEG
+    """ 
     def makeLists(self, signalNames, signalHyp):
         
         signalList=[]
@@ -76,7 +101,14 @@ class DB:
         return signalList, annotationsList
     
     
-        #input single channel signal
+    """
+    Method that creates an array of windows for a single channel EEG, the size 
+    of the windows is defined by windowSamples.
+    
+    @param SingleChannelSignal signal to get windows from
+    
+    @return ArrayOfWindows array of windows for the EEG.
+    """ 
     def createWindowsBySamples(self, SingleChannelSignal):
         
         wSamples=int(self.windowSamples)
@@ -87,13 +119,16 @@ class DB:
         
         return ArrayOfWindows
 
-
+    """
+    Method that creates an array of windows for every signal in a list, returning
+    them as a list of windows arrays.
+    
+    @param signalList signal list to get windows from
+    
+    @return windowsList List of array of windows for each EEG file.
+    """ 
     def makeWindowsList(self, signalList):
-        #100Hz
-        #T=0.01
-        #WindowTime=30
-        #WindowSamples=WindowTime/T
-         
+        
         windowsList=[]
         for i in range(0, len(signalList)):
             window = self.createWindowsBySamples(signalList[i])
@@ -101,10 +136,18 @@ class DB:
         
         return windowsList
 
-
+    """
+    Method that creates an array of labels for each window in a single channel
+    EEG, giving them the label according to the period of sleep stage registered 
+    in its respective annotations.
+    
+    @param SingleChannelSignal signal to get labels from
+    @param SignalAnnotation annotations of signal
+    
+    @return LabelArray array of sleep stages labels.
+    """ 
     def labelSignal(self, SingleChannelSignal, SignalAnnotations):
         
-        #ArrayOfWindows=createWindowsBySamples(SingleChannelSignal)
         NumberOfWindows=int(SingleChannelSignal.size/self.windowSamples)
         LAnnotation=SignalAnnotations[0].size
         SignalIntervalLabels=SignalAnnotations[0]/self.sampleT
@@ -116,32 +159,46 @@ class DB:
             LabelLenght=SignalIntervalLabels[i+1]-SignalIntervalLabels[i]
             CurrentLabel=SignalLabels[i]
             WindowsInInterval=int(LabelLenght/self.windowSamples)
+            
             for j in np.arange(WindowsInInterval):
                 LabelArray[j+start]=CurrentLabel
+            
             start+=WindowsInInterval
         
         return LabelArray
     
+    """
+    Method that binarize an array of windows labels in class 1 as awake or
+    movement and class 0 the rest. Its important to note that if a window has
+    no label, the method assign them previous window label.
+    
+    @param LabelArray array of EEG windows labels
+    
+    @return BinaryArray binarize array of labels.
+    """ 
     def binaryLabel(self, LabelArray):
     
         BinaryArray = np.zeros((LabelArray.size))
-        #print(LabelArray.size)
         for i in np.arange(LabelArray.size):
-            #print(i)
             if LabelArray[i]=="":
                 LabelArray[i]=LabelArray[i-1]
-            if LabelArray[i][-1]=='W' or LabelArray[i][-1]=='M': #
+            if LabelArray[i][-1]=='W' or LabelArray[i][0]=='M':
                 BinaryArray[i]=1
 
         return BinaryArray
 
-
+    """
+    Method that get list of label arrays from signals windows, makes them
+    binary and form a list for each EEG label file.
+    
+    @param signalList list of EEGs
+    @param annotationsList annottions of EEGs
+    
+    @return biLabList list of binary labels for each EEG window.
+    """ 
     def makeBinaryLabelsList(self, signalList, annotationsList):
     
         biLabList=[]
-        #T=0.01
-        #WindowTime=30
-        #WindowSamples=self.windowTime/self.sampleT
         for i in range(0, len(annotationsList)):
             LabelArray=self.labelSignal(signalList[i], annotationsList[i])
             BinaryLabels=self.binaryLabel(LabelArray)
@@ -149,7 +206,15 @@ class DB:
         
         return biLabList
     
+    """
+    Method that concatenates a window with its label
     
+    @param windowsList list of EEGs separated in 30s windows, to concatenate with labels
+    @param biLabList list of binary labels for each EEG window, to put at the end 
+    of each window
+    
+    @return DBlist list with feature vector and labels at the end of them.
+    """    
     def concatSigLab(self, windowsList, biLabList):
         
         DBlist=[]
@@ -159,7 +224,14 @@ class DB:
         
         return DBlist   
         
+    """
+    Method that concatenates a list elements in a numpy array, elements are put as
+    a row at the end of the array
+
+    @param biLabList list to be concatenated
     
+    @return DB single array with all list elements concatenated.
+    """  
     def concatList(self, biLabList):
         
         DB = biLabList[0]
@@ -168,7 +240,15 @@ class DB:
         
         return DB
     
+    """
+    Method that concatenates two List in a single array
     
+    @param windowsList list of EEGs separated in 30s windows, to concatenate with labels
+    @param biLabList list of binary labels for each EEG window, to put at the end 
+    of each window
+    
+    @return DB single array dataset with feature vector and labels at the end of them.
+    """    
     def concatDB(self, windowsList, biLabList):
     
         DBlist=self.concatSigLab(windowsList, biLabList)
@@ -176,7 +256,15 @@ class DB:
         
         return DB
     
+    """
+    DataSet generation of all EEGs signal files and its labels. This mehots first
+    get de EEGs and it's annotations, after ir separate each EEG in windows of 30 seconds
+    each, then it gets it's banary labels (class 1 awake or movement), and finally, 
+    concatenate all in a single array of feature vectors for each 30 second window
+    in the whole dataset, which at the end they have thir corresponding label (1 or 0)
     
+    @return DataBase array of data set windows and respective labels.
+    """
     def getDB(self):
     
         signalList, annotationsList = self.getLists()
@@ -186,7 +274,19 @@ class DB:
         
         return DataBase
 
-
+    """
+    DataSet generation of all EEGs signal files and its labels. This mehots first
+    get de EEGs and it's annotations, after ir separate each EEG in windows of 30 seconds
+    each, then it gets it's banary labels (class 1 awake or movement), and finally, 
+    concatenate all in a single array of feature vectors for each 30 second window
+    in the whole dataset, which at the end they have thir corresponding label (1 or 0).
+    Same as above method, but can be performed on any input file paths.
+    
+    @param signalNames signal PSGs paths
+    @param singalHyp signal Hypnogram paths
+    
+    @return DataBase array of data set windows and respective labels.
+    """
     def makeDB(self, signalNames, signalHyp):
         
             signalList, annotationsList = self.makeLists(signalNames, signalHyp)
