@@ -20,6 +20,7 @@ class DB:
 
     '''
     def __init__(self, clf, f, Wtime, signalNames, signalHyp):
+        
         self.classifier = clf 
         self.sampleFreq = f
         self.sampleT = 1/f
@@ -177,7 +178,7 @@ class DB:
     
     def getDB(self):
     
-        signalList, annotationsList = self.getLists(self.signalNames, self.signalHyp)
+        signalList, annotationsList = self.getLists()
         windowsList = self.makeWindowsList(signalList)
         biLabList= self.makeBinaryLabelsList(signalList, annotationsList)
         DataBase = self.concatDB(windowsList, biLabList)
@@ -257,6 +258,8 @@ class DB:
     
         Acc=np.zeros((len(self.signalNames),1))
         
+        print("\n[Cross Validation with %1.0f subjects]" % len(self.signalNames))
+        
         for i in range(0, Acc.size):
             
             #generate every CV Train and test
@@ -289,8 +292,11 @@ class DB:
             #se calculan desempeños
             conf = confusion_matrix(class_test, pred);
             Rates, Acc[i]= self.TVFP(conf)
+            print("%1.0f iteration Accuracy: %0.3f)" % (i, Acc[i]*100))
     
+        print("Model Overall Accuracy: %0.3f (+/- %0.3f)\n" % (AccMLP.mean()*100, AccMLP.std()*100))
         return Acc
+    
       
 class FeatureSeriesDB(DB):
     
@@ -319,7 +325,7 @@ class FeatureSeriesDB(DB):
         feat[:,9] = np.std(s,1);
         return feat;
         
-  
+#add method to get accuracy over any set  
 
 #small tests
 if __name__ == "__main__":
@@ -344,7 +350,15 @@ if __name__ == "__main__":
     signalHypTest=[]
     signalHypTest.append(signalHyp[-1])
     
-    MLP = MLPClassifier(solver='adam', alpha=1e-5, tol=1e-5, hidden_layer_sizes=(300,50), max_iter = 10000, random_state=1)
+    fs = 100
+    windowTime = 30
     
-    DBnormalFeat = FeatureSeriesDB(MLP, 100, 30, signalNamesTrain, signalHypTrain)
-    AccMLP = DBnormalFeat.getCrossValidationAcc()
+    print("\nMLP")
+    MLP = MLPClassifier(solver='adam', alpha=1e-5, tol=1e-5, hidden_layer_sizes=(300,50), max_iter = 10000, random_state=1)   
+    DBnormalFeatMLP = FeatureSeriesDB(MLP, fs, windowTime, signalNamesTrain, signalHypTrain)
+    AccMLP = DBnormalFeatMLP.getCrossValidationAcc()
+    
+    print("\nRF")
+    RF = RandomForestClassifier(n_estimators=50,max_leaf_nodes=100,n_jobs=-1,random_state=0)   
+    DBnormalFeatRF = FeatureSeriesDB(RF, fs, windowTime, signalNamesTrain, signalHypTrain)
+    AccRF = DBnormalFeatRF.getCrossValidationAcc()
