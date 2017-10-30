@@ -3,12 +3,13 @@
 """
 Created on Mon Oct  2 10:57:47 2017
 
-OOP Generate Feature extracted set
-class DB & FeatureSeriesDB
+OOP General methodology for Feature extraction, and cross validation
+of Data set.
 
 @author: asceta
 """
-import pyedflib
+
+import pyedflib #libary for reading EDF file
 import numpy as np
 import scipy as sp
 from sklearn import preprocessing
@@ -129,7 +130,7 @@ class DB:
             #print(i)
             if LabelArray[i]=="":
                 LabelArray[i]=LabelArray[i-1]
-            if LabelArray[i][-1]=='W':
+            if LabelArray[i][-1]=='W' or LabelArray[i][-1]=='M': #
                 BinaryArray[i]=1
 
         return BinaryArray
@@ -256,9 +257,9 @@ class DB:
     
     def getCrossValidationAcc(self):
     
-        Acc=np.zeros((len(self.signalNames),1))
+        Acc=np.zeros((int(len(self.signalNames)/2),1))#Acc=np.zeros((len(self.signalNames),1))#
         
-        print("\n[Cross Validation with %1.0f subjects]" % len(self.signalNames))
+        print("\n[Cross Validation with %1.0f subjects]" % Acc.size)#len(self.signalNames))#Acc.size
         
         for i in range(0, Acc.size):
             
@@ -267,9 +268,13 @@ class DB:
             signalHypAux=self.signalHyp[:]
             
             signalNamesTestCV=[]
-            signalNamesTestCV.append(signalNamesAux.pop(i))
+            #signalNamesTestCV.append(signalNamesAux.pop(i))
+            signalNamesTestCV.append(signalNamesAux.pop(i*2))
+            signalNamesTestCV.append(signalNamesAux.pop(i*2))
             signalHypTestCV=[]
-            signalHypTestCV.append(signalHypAux.pop(i))
+            #signalHypTestCV.append(signalHypAux.pop(i))
+            signalHypTestCV.append(signalHypAux.pop(i*2))
+            signalHypTestCV.append(signalHypAux.pop(i*2))
             
             signalNamesTrainCV=signalNamesAux
             signalHypTrainCV=signalHypAux
@@ -292,9 +297,9 @@ class DB:
             #se calculan desempeños
             conf = confusion_matrix(class_test, pred);
             Rates, Acc[i]= self.TVFP(conf)
-            print("%1.0f iteration Accuracy: %0.3f)" % (i, Acc[i]*100))
+            print("%1.0f iteration Accuracy: %0.3f" % (i, Acc[i]*100))
     
-        print("Model Overall Accuracy: %0.3f (+/- %0.3f)\n" % (AccMLP.mean()*100, AccMLP.std()*100))
+        print("Model Overall Accuracy: %0.3f (+/- %0.3f)\n" % (Acc.mean()*100, Acc.std()*100))
         return Acc
     
       

@@ -22,13 +22,11 @@ testSubjects=1
 #testSubjectIndexs=np.random.randint(len(signalNames),size=testSubjects)
     
 #first 12
-signalNamesTrain=signalNames[:len(signalNames)-testSubjects]
-signalNamesTest=[]
-signalNamesTest.append(signalNames[-1])
+signalNamesTrain=signalNames[:len(signalNames)-testSubjects*2]
+signalNamesTest=signalNames[len(signalNames)-testSubjects*2:]
     
-signalHypTrain=signalHyp[:len(signalHyp)-testSubjects]
-signalHypTest=[]
-signalHypTest.append(signalHyp[-1])
+signalHypTrain=signalHyp[:len(signalHyp)-testSubjects*2]
+signalHypTest=signalHyp[len(signalHyp)-testSubjects*2:]
     
 fs = 100
 windowTime = 30
