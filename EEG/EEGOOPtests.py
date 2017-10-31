@@ -42,9 +42,27 @@ signalList, annotationList = DBinstanceMLP.getLists()
 """
 Generate DataSet for trainning and testing
 """
-DataSet = DBinstanceMLP.getDB()
+dataSet = DBinstanceMLP.getDB()
 
 #%%
+"""
+Generate feature vectors as whole signal, and its labels
+"""
+features, classes = DBinstanceMLP.getFeatAndLabels()
+#%%
+from EEGOOP import FeatureSeriesDB
+"""
+Generate feature vectors as simple stadistics, and its labels
+"""
+DBStadisticsFeatMLP = FeatureSeriesDB(MLP, fs, windowTime, signalNames, signalHyp)
+features, classes = DBStadisticsFeatMLP.getFeatAndLabels()
+
+
+
+
+
+
+
 
 #Labels = DBinstanceMLP.concatList(DBinstanceMLP.makeBinaryLabelsList(signalList, annotationList))
 

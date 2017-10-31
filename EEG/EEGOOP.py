@@ -295,19 +295,25 @@ class DB:
             DataBase = self.concatDB(windowsList, biLabList)
             
             return DataBase
+   
     """
-        def crosses(self, my_array):
-          return ((my_array[:,:-1] * my_array[:,1:]) < 0).sum(axis=1)
-        
-        def slope_sign_changes(self, my_array):
-            w = np.shape(my_array)[1];
-            d1 = my_array[:,1:w-2] - my_array[:,2:w-1]
-            d2 = my_array[:,2:w-1] - my_array[:,3:w]
-            return np.double( np.sum((d1*d2) < 0, 1) );
-    """    
+    Feature extraction method to be override, in this case it does nothing,
+    just return the input
+    
+    @param s array of windows where features are going to be extracted
+    
+    @return s input array
+    """
     def extr_feat(self, s):
         return s;
 
+    """
+    Separate Data set array in labels array and signal, where features are
+    extracted
+    
+    @return fetures feature vectors of Data set.
+    @return classes labels for feature vectors
+    """
     def getFeatAndLabels(self):
         
         DB=self.getDB()
@@ -316,6 +322,16 @@ class DB:
         
         return features, classes
     
+    """
+    Separate Data set array in labels array and signal, where features are
+    extracted. Same as above method, but can be performed on any input file paths.
+    
+    @param signalNames signal PSGs paths
+    @param singalHyp signal Hypnogram paths
+    
+    @return fetures feature vectors of Data set.
+    @return classes labels for feature vectors
+    """
     def makeFeatAndLabels(self, signalNames, signalHyp):
         
         DB=self.makeDB(signalNames, signalHyp)
@@ -405,15 +421,30 @@ class DB:
       
 class FeatureSeriesDB(DB):
     
+    """
+    Method to calculare 0 crosses of a signal
+    
+    @param my_array signal
+    
+    @return ((my_array[:,:-1] * my_array[:,1:]) < 0).sum(axis=1) number of 0 crosses
+    """
     def crosses(self, my_array):
       return ((my_array[:,:-1] * my_array[:,1:]) < 0).sum(axis=1)
     
+    """
+    Method to calculare number of slope sign changes in a signal
+    
+    @param my_array signal
+    
+    @return np.double( np.sum((d1*d2) < 0, 1) ) number of slope sign changes
+    """
     def slope_sign_changes(self, my_array):
         w = np.shape(my_array)[1];
         d1 = my_array[:,1:w-2] - my_array[:,2:w-1]
         d2 = my_array[:,2:w-1] - my_array[:,3:w]
-        return np.double( np.sum((d1*d2) < 0, 1) );
+        return np.double( np.sum((d1*d2) < 0, 1) )
     
+    #@override
     def extr_feat(self, s):
         h = np.shape(s)[0]
         w = np.shape(s)[1];
