@@ -42,12 +42,28 @@ windowTime = 30
 """
 Create instances of FeatureSeriesDB for a MLP & RF, and perform CV
 """  
-print("\nMLP")
 MLP = MLPClassifier(solver='adam', alpha=1e-5, tol=1e-5, hidden_layer_sizes=(300,50), max_iter = 10000, random_state=1)   
 DBnormalFeatMLP = FeatureSeriesDB(MLP, fs, windowTime, signalNamesTrain, signalHypTrain)
-AccMLP = DBnormalFeatMLP.getCrossValidationAcc()
     
-print("\nRF")
-RF = RandomForestClassifier(n_estimators=50,max_leaf_nodes=100,n_jobs=-1,random_state=0)   
+RF = RandomForestClassifier(n_estimators=50, max_leaf_nodes=100, n_jobs=-1, random_state=0)   
 DBnormalFeatRF = FeatureSeriesDB(RF, fs, windowTime, signalNamesTrain, signalHypTrain)
+
+#%%
+"""
+Perform CV
+"""
+print("\nMLP CV")
+AccMLP = DBnormalFeatMLP.getCrossValidationAcc()
+
+print("\nMLP CV")
 AccRF = DBnormalFeatRF.getCrossValidationAcc()
+
+#%%
+"""
+Get test accuracy of models
+""" 
+print("\nMLP test Accuracy")
+testAccMLP = DBnormalFeatMLP.getTestAcc(signalNamesTest, signalHypTest) 
+
+print("\nRF test Accuracy")
+testAccRF = DBnormalFeatRF.getTestAcc(signalNamesTest, signalHypTest) 

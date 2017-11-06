@@ -413,6 +413,44 @@ class DB:
         print("Model Overall Accuracy: %0.3f (+/- %0.3f)\n" % (Acc.mean()*100, Acc.std()*100))
         return Acc
     
+    """
+    Given signalNamesTest and signalHypTest of a test set, the class model 
+    is trained, features are extracted from both trainnning and test sets, normalize
+    those features, training the classifier, to finally calculate and print
+    accuracy over test set.
+    
+    @param signalNamesTest list of EEG test signals names
+    @param signalHypTet list of test annotations file names
+    
+    @return Acc accuracy of test set
+    """
+    def getTestAcc(self, signalNamesTest, signalHypTest):
+            
+        signalNamesTrain = self.signalNames
+        signalHypTrain = self.signalHyp
+            
+        #feature extraxtion and labels
+        caract_train, class_train = self.makeFeatAndLabels(signalNamesTrain, signalHypTrain)
+        caract_test, class_test = self.makeFeatAndLabels(signalNamesTest, signalHypTest)
+        
+        
+        #se normalizan caracteristicas de cada conjunto, con los parametros del conjunto de train
+        scaler = preprocessing.StandardScaler().fit(caract_train);
+        caract_train = scaler.transform(caract_train);
+        caract_test = scaler.transform(caract_test);
+            
+        #train classifier
+        self.classifier.fit(caract_train, class_train);
+            
+        #predict
+        pred = self.classifier.predict(caract_test);
+        #se calculan desempenos
+        conf = confusion_matrix(class_test, pred);
+        Rates, Acc= self.TVFP(conf)
+        print("Test Accuracy: ", Acc*100)
+    
+        return Acc
+    
       
 class FeatureSeriesDB(DB):
     
@@ -457,7 +495,7 @@ class FeatureSeriesDB(DB):
         return feat;
         
 #add method to get accuracy over any set  
-
+#%%
 #small tests
 if __name__ == "__main__":
 #    main()
