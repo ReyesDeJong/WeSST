@@ -8,15 +8,22 @@ Different Feature Extraction methods
 @author: asceta
 """
 
+"""
+Libraries, and classes importations
+"""
 from EEGOOP import FeatureSeriesDB
 
 import glob
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
+
+"""
+Files Path, fix number of test subjects, sample frecuency and sample window size
+"""    
+DatasetPath = "/home/asceta/Documents/Fatigue/DB/"
     
-    
-signalNames=sorted(glob.glob("/home/asceta/Documents/Fatigue/DB/*PSG.edf"))
-signalHyp=sorted(glob.glob("/home/asceta/Documents/Fatigue/DB/*Hypnogram.edf"))
+signalNames=sorted(glob.glob(DatasetPath+"*PSG.edf"))
+signalHyp=sorted(glob.glob(DatasetPath+"*Hypnogram.edf"))
    
 testSubjects=1
 #testSubjectIndexs=np.random.randint(len(signalNames),size=testSubjects)
@@ -32,6 +39,9 @@ fs = 100
 windowTime = 30
     
 #%%
+"""
+Create instances of FeatureSeriesDB for a MLP & RF, and perform CV
+"""  
 print("\nMLP")
 MLP = MLPClassifier(solver='adam', alpha=1e-5, tol=1e-5, hidden_layer_sizes=(300,50), max_iter = 10000, random_state=1)   
 DBnormalFeatMLP = FeatureSeriesDB(MLP, fs, windowTime, signalNamesTrain, signalHypTrain)

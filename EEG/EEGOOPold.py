@@ -48,7 +48,22 @@ class DB:
     """ 
     def getLists(self):
         
-        signalList, annotationsList= self.makeLists(self.signalNames,self.signalHyp)
+        signalList=[]
+        annotationsList=[]
+        
+        for i in range(0, len(self.signalNames)):
+            
+            file = pyedflib.EdfReader(self.signalNames[i])
+            #read Fpz-Cz EEG wich is the first
+            signalList.append(file.readSignal(0))
+            file._close()
+            del file
+            
+            file2 = pyedflib.EdfReader(self.signalHyp[i])
+            annotationsList.append(file2.readAnnotations())
+            file2._close()
+            del file2
+            
         return signalList, annotationsList
     
           
@@ -252,7 +267,11 @@ class DB:
     """
     def getDB(self):
     
-        DataBase = self.makeDB(self.signalNames, self.signalHyp)        
+        signalList, annotationsList = self.getLists()
+        windowsList = self.makeWindowsList(signalList)
+        biLabList= self.makeBinaryLabelsList(signalList, annotationsList)
+        DataBase = self.concatDB(windowsList, biLabList)
+        
         return DataBase
 
     """
@@ -297,7 +316,10 @@ class DB:
     """
     def getFeatAndLabels(self):
         
-        features, classes = self.makeFeatAndLabels(self.signalNames, self.signalHyp)
+        DB=self.getDB()
+        classes = DB[:,3000];
+        features = (self.extr_feat(DB[:,0:3000]));
+        
         return features, classes
     
     """
