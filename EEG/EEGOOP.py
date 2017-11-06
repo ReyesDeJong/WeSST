@@ -342,7 +342,15 @@ class DB:
 
 
 
-    #funcion para calcular desempeños
+    """
+    Given a binary or multiclass confusion matrix of classification, this method
+    calculates the TPR, FPR per class, its average and the accuracy of the predictions.
+    
+    @param Confusion confusion matrix to calculate performance
+    
+    @return TVFP TPR and FPR per classes
+    @return Acc accuracy obtained in the confusion matrix
+    """
     def TVFP(self, Confusion):
         #se crea arreglo con 0 para alberga TVP y TFP de cada clase
         TVFP=np.zeros((Confusion.shape[0],2))
@@ -370,7 +378,16 @@ class DB:
         Acc=suma/np.sum(Confusion)
         return TVFP, Acc
     
-    
+    """
+    Perform a cross validation strategy along the signalNames and signalHyp attributes
+    of the class. Each validation set its contructed with the 2 measurements of
+    a single subject, trainning the model with the rest. In each cross validation
+    iteration, this method extract features, normalize those features, train
+    the classifier, calculates and prints iteration accuracy, and print and 
+    return an accuracy array of each iteration. [THE EXECUTION COULD TAKE A LONG TIME]
+
+    @return Acc accuracy in each iteration
+    """
     def getCrossValidationAcc(self):
     
         Acc=np.zeros((int(len(self.signalNames)/2),1))#Acc=np.zeros((len(self.signalNames),1))#
@@ -410,7 +427,7 @@ class DB:
             
             #predict
             pred = self.classifier.predict(caract_test);
-            #se calculan desempeños
+            #se calculan desempenos
             conf = confusion_matrix(class_test, pred);
             Rates, Acc[i]= self.TVFP(conf)
             print("%1.0f iteration Accuracy: %0.3f" % (i, Acc[i]*100))
